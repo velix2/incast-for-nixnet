@@ -53,6 +53,7 @@
               a.node = "server${toString i}";
               b.node = "br0";
               netem.rateMbit = 1000;
+              netem.limit = 22; # roughly simulates 32 KB buffer
             };
           };
           clientConfig =
@@ -87,6 +88,7 @@
               a.node = "client";
               b.node = "br0";
               netem.rateMbit = 1000;
+              netem.limit = 22; # roughly simulates 32 KB buffer
             };
           };
 
@@ -95,7 +97,7 @@
             arp = true;
             arpPrefill = true;
             sysctl = {
-               "net.ipv4.tcp_rto_min_us" = 50000;
+               "net.ipv4.tcp_rto_min_us" = 200000;
             };
             bridges = [ "br0" ];
             nodes = lib.mergeAttrsList (map (node: node.nodes) nodeList);
