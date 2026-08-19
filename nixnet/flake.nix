@@ -58,7 +58,7 @@
           clientConfig =
           {
             nodes.client = {
-            packages = [ incast ];
+            packages = [ incast pkgs.iputils ];
               networking.interfaces."eth0" = { 
                 ipv4.addresses = [
                   {
@@ -74,6 +74,7 @@
                   stripeUnit = blockSizeBytes / n;
                   in
                   ''
+                    ping -c 5 10.0.0.2 | grep "rtt" | tee ./rtt.txt
                     sleep 1
                     # client [num of servers] [server names file] [port] [stripe unit] [server request unit] [num blocks]
                     client ${toString n} ${serverNamesFile} 65125 ${toString stripeUnit} 1 ${toString blocks} | tee ./stdout.txt   
