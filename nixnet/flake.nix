@@ -21,7 +21,10 @@
         let
           nixnet = inputs'.nixnet.legacyPackages;
           incast = inputs.incast.packages."x86_64-linux".default;
-          n = 2;
+          
+          n = 16;
+          blocks = 200;
+          blockSizeBytes = 1040000; # divided by n, it must be multiple of 1000  
 
           mkAddress = i: "10.${toString (i / (254 * 254))}.${toString (i / 254)}.${toString ((lib.mod i 254) + 1)}";
 
@@ -35,13 +38,14 @@
                     prefixLength = 8;
                   }
                 ];
-                netem.delayMs = 50;
+                # netem.delayMs = 1;
+                netem.rateMbit = 1000;
               };
               scripts.main = {
                 exec =
                   ''
                     echo "Starting server on address ${mkAddress i}"
-                    server
+                    server > /dev/null
                   '';
                 await = false;
               };
@@ -52,7 +56,7 @@
               b.node = "br0";
             };
           };
-          clientSet =
+          clientConfig =
           {
             nodes.client = {
             packages = [ incast ];
@@ -63,16 +67,19 @@
                     prefixLength = 8;
                   }
                 ];
-                netem.delayMs = 50;
+                netem.delayMs = 1;
+                netem.rateMbit = 1000;
               };
               scripts.main = {
                 exec =
                   let serverNamesFile = pkgs.writeText "server_names.txt" 
                   (builtins.concatStringsSep "\n" (map mkAddress (lib.range 1 n)));
+                  stripeUnit = blockSizeBytes / n;
                   in
                   ''
                     sleep 1
-                    client ${toString n} ${serverNamesFile} 65125 1000 100 100 | tee ./stdout.txt
+                    # client [num of servers] [server names file] [port] [stripe unit] [server request unit] [num blocks]
+                    client ${toString n} ${serverNamesFile} 65125 ${toString stripeUnit} 1 ${toString blocks} | tee ./stdout.txt   
                   '';
                 foreground = true;
                 await = true;
@@ -84,9 +91,13 @@
             };
           };
 
-          nodeList = [ clientSet ] ++ map mkServer (lib.range 1 n);
+          nodeList = [ clientConfig ] ++ map mkServer (lib.range 1 n);
           config = {
             arp = true;
+            arpPrefill = true;
+            sysctl = {
+               "net.ipv4.tcp_rto_min_us" = 50000;
+            };
             bridges = [ "br0" ];
             nodes = lib.mergeAttrsList (map (node: node.nodes) nodeList);
             veths = lib.mergeAttrsList (map (node: node.veths) nodeList);
