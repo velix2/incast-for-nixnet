@@ -21,58 +21,70 @@
         let
           nixnet = inputs'.nixnet.legacyPackages;
           incast = inputs.incast.packages."x86_64-linux".default;
-          n = 10;
-          mkClient = i: {
-            nodes.${"client${toString i}"} = {
+          n = 2;
+
+          mkAddress = i: "10.${toString (i / (254 * 254))}.${toString (i / 254)}.${toString ((lib.mod i 254) + 1)}";
+
+          mkServer = i: {
+            nodes."server${toString i}" = {
               packages = [ incast ];
-              networking.interfaces.${"eth${toString (i + 1)}"}.ipv4.addresses = [
-                {
-                  address = "10.0.0.${toString (i + 1)}";
-                  prefixLength = 24;
-                }
-              ];
+              networking.interfaces.${"eth${toString (i + 1)}"} = { 
+                ipv4.addresses = [
+                  {
+                    address = mkAddress i;
+                    prefixLength = 8;
+                  }
+                ];
+                netem.delayMs = 50;
+              };
               scripts.main = {
                 exec =
                   ''
-                    echo "10.0.0.1" > server_names.txt
-                    sleep 1
-                    client 1 server_names.txt 65125 1000 100 100 | tee ./stdout.txt
+                    echo "Starting server on address ${mkAddress i}"
+                    server
                   '';
-                await = true;
+                await = false;
               };
+              workDir = null;
             };
             veths.${"eth${toString (i + 1)}"} = {
-              a.node = "client${toString i}";
+              a.node = "server${toString i}";
               b.node = "br0";
             };
           };
-          serverSet =
+          clientSet =
           {
-            nodes.server = {
+            nodes.client = {
             packages = [ incast ];
-              networking.interfaces.${"eth0"}.ipv4.addresses = [
-                {
-                  address = "10.0.0.1";
-                  prefixLength = 24;
-                }
-              ];
+              networking.interfaces."eth0" = { 
+                ipv4.addresses = [
+                  {
+                    address = "10.0.0.1";
+                    prefixLength = 8;
+                  }
+                ];
+                netem.delayMs = 50;
+              };
               scripts.main = {
                 exec =
+                  let serverNamesFile = pkgs.writeText "server_names.txt" 
+                  (builtins.concatStringsSep "\n" (map mkAddress (lib.range 1 n)));
+                  in
                   ''
-                    echo test
-                    server
+                    sleep 1
+                    client ${toString n} ${serverNamesFile} 65125 1000 100 100 | tee ./stdout.txt
                   '';
                 foreground = true;
                 await = true;
               };
             };
             veths."eth0" = {
-              a.node = "server";
+              a.node = "client";
               b.node = "br0";
             };
           };
 
-          nodeList = [ serverSet ] ++ map mkClient (lib.range 1 n);
+          nodeList = [ clientSet ] ++ map mkServer (lib.range 1 n);
           config = {
             arp = true;
             bridges = [ "br0" ];
