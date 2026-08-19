@@ -38,8 +38,6 @@
                     prefixLength = 8;
                   }
                 ];
-                netem.delayMs = 1;
-                netem.rateMbit = 1000;
               };
               scripts.main = {
                 exec =
@@ -54,6 +52,7 @@
             veths."eth${toString (i + 1)}" = {
               a.node = "server${toString i}";
               b.node = "br0";
+              netem.rateMbit = 1000;
             };
           };
           clientConfig =
@@ -67,8 +66,6 @@
                     prefixLength = 8;
                   }
                 ];
-                netem.delayMs = 1;
-                netem.rateMbit = 1000;
               };
               scripts.main = {
                 exec =
@@ -88,6 +85,7 @@
             veths."eth0" = {
               a.node = "client";
               b.node = "br0";
+              netem.rateMbit = 1000;
             };
           };
 
@@ -101,10 +99,6 @@
             bridges = [ "br0" ];
             nodes = lib.mergeAttrsList (map (node: node.nodes) nodeList);
             veths = lib.mergeAttrsList (map (node: node.veths) nodeList);
-
-            postSetup = ''
-              tc -n br0 qdisc add dev eth0 root netem rate 1000Mbit
-            '';
           };
         in
         {
