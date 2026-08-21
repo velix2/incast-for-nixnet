@@ -13,16 +13,17 @@
         nixnet = inputs.nixnet.legacyPackages.${system};
         incast = inputs.incast.packages.${system}.default;
         
-        config = import ./experiment.nix { 
+        defaultConfig = import ./experiment.nix { 
           inherit pkgs nixnet incast;
           lib = pkgs.lib;
         };
       in
       {
         packages.${system} = {
-          default = nixnet.mkExperiment config;
-          mermaid = nixnet.mkMermaid config;
-          mermaid-svg = nixnet.mkMermaidSvg config;
+          default = nixnet.mkExperiment defaultConfig;
+          mkGraphs = import ./graphing/graphing.nix { inherit pkgs nixnet incast; };
+          mermaid = nixnet.mkMermaid defaultConfig;
+          mermaid-svg = nixnet.mkMermaidSvg defaultConfig;
         };
       };
 }
