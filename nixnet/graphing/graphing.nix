@@ -11,10 +11,17 @@ mkCommand = n: rto: ''
   '';
 python3 = pkgs.python3.withPackages (ps: with ps; [ matplotlib ]);
 rtoSteps = [ 200 1000 5000 10000 50000 100000 200000 ];
-serverCounts = [ 4 8 16];
+serverCountsFig2 = [ 4 8 16 32 64 128 ];
+serverCountsFig3 = [ 4 8 16 ];
 in
-pkgs.writeShellScriptBin "incast-graphs" 
+{
+  incast-figure-2 = pkgs.writeShellScriptBin "incast-figure-2" 
  ("rm -rf out-graphs && mkdir -p out-graphs" + "\n" +
- (builtins.concatStringsSep "\n" (builtins.concatMap (n: map (rto: mkCommand n rto) rtoSteps) serverCounts))+ "\n" + 
-  "${python3}/bin/python3 ${./draw-graph.py}")
+ (builtins.concatStringsSep "\n" (builtins.concatMap (n: map (rto: mkCommand n rto) rtoSteps) serverCountsFig2))+ "\n" + 
+  "${python3}/bin/python3 ${./recreate-figure-2.py}");
 
+  incast-figure-3 = pkgs.writeShellScriptBin "incast-figure-3" 
+ ("rm -rf out-graphs && mkdir -p out-graphs" + "\n" +
+ (builtins.concatStringsSep "\n" (builtins.concatMap (n: map (rto: mkCommand n rto) rtoSteps) serverCountsFig3))+ "\n" + 
+  "${python3}/bin/python3 ${./recreate-figure-3.py}");
+}

@@ -25,10 +25,13 @@ def create_plot(data_file):
     styles = {
         4: {'color': 'green', 'linestyle': ':', 'marker': 'D', 'label': '4'},
         8: {'color': 'red', 'linestyle': '-', 'marker': 'o', 'label': '8'},
-        16: {'color': 'blue', 'linestyle': '--', 'marker': '^', 'label': '16'}
+        16: {'color': 'blue', 'linestyle': '--', 'marker': '^', 'label': '16'},
+        32: {'color': 'black', 'linestyle': ':', 'marker': 'v', 'label': '32'},
+        64: {'color': 'orange', 'linestyle': '-.', 'marker': 'P', 'label': '64'},
+        128: {'color': 'coral', 'linestyle': '-.', 'marker': 's', 'label': '128'}
     }
     
-    for servers in [4, 8, 16]:
+    for servers in [4, 8, 16, 32, 64, 128]:
         if servers in data:
             y_vals = []
             for rto in rto_order:
@@ -52,6 +55,6 @@ def create_plot(data_file):
     ax.legend(title="# servers", loc='lower left', frameon=False, labelspacing=0.2)
     
     plt.tight_layout()
-    plt.savefig('output_servers_rto_vs_goodput.png', dpi=300)
+    plt.savefig('figure-2-output_servers_rto_vs_goodput.png', dpi=300)
 
 create_plot('out-graphs/summary.txt')
