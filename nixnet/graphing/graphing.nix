@@ -3,7 +3,7 @@
   nixnet,
   incast,
 }:
-let mkConfig = n: rtoMinUs: (import ../experiment.nix { inherit pkgs nixnet incast n rtoMinUs; lib = pkgs.lib; blockSizeBytes = 256000; })
+let mkConfig = n: rtoMinUs: (import ../experiment.nix { inherit pkgs nixnet incast n rtoMinUs; lib = pkgs.lib; blockSizeBytes = 1008000; }) # 1008000 instead of 1000000 because we need to make sure that blockSizeBytes / n is a multiple of 1000
   // {workDir = "out-graphs/{run}/${toString n}-servers/rto${toString rtoMinUs}"; };
 mkCommand = n: rto: ''
   ${nixnet.mkExperiment (mkConfig n rto)}/bin/testbed $@

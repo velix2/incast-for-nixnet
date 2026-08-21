@@ -6,7 +6,7 @@
   
   n ? 16,
   blocks ? 200,
-  blockSizeBytes ? 1040000, # divided by n, it must be multiple of 1000  
+  blockSizeBytes ? 1000000, # divided by n, it must be multiple of 1000  
   rtoMinUs ? 200000,
   bufferSizeKB ? 32,
 
@@ -42,7 +42,7 @@ let
       a.node = "server${toString i}";
       b.node = "br0";
       netem.rateMbit = 1000;
-      netem.limit = 22; # roughly simulates 32 KB buffer
+      netem.limit = bufferSizeKB * 1024 / 1500; # roughly simulates buffer size
     };
   };
 
