@@ -43,7 +43,7 @@ def create_plot(data_file):
                     
             ax.plot(x_labels, y_vals, **styles[servers], linewidth=2, markersize=4)
 
-    ax.set_title("RTOmin vs Goodput\n(Block size = 1.008MB, buffer = ~32KB)")
+    ax.set_title("RTOmin vs Goodput\n(Block size = 1.024MB, buffer = ~32KB)")
     ax.set_xlabel("RTOmin (seconds)")
     ax.set_ylabel("Goodput (Mbps)")
     
