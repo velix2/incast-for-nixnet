@@ -1,4 +1,4 @@
 out/
 result
 out-graphs/
-*output_servers_rto_vs_goodput.png
+figure-*.png
