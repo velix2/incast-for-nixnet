@@ -34,22 +34,26 @@ def create_plot(data_file):
     for servers in [4, 8, 16, 32, 64, 128]:
         if servers in data:
             y_vals = []
+            x_vals = []
             for rto in rto_order:
                 if rto in data[servers] and data[servers][rto]:
                     avg = sum(data[servers][rto]) / len(data[servers][rto])
+                    x_vals.append(rto)
                     y_vals.append(avg)
-                else:
-                    y_vals.append(float('nan'))
                     
-            ax.plot(x_labels, y_vals, **styles[servers], linewidth=2, markersize=4)
+            ax.plot(x_vals, y_vals, **styles[servers], linewidth=2, markersize=4)
 
     ax.set_title("RTOmin vs Goodput\n(Block size = 1.024MB, buffer = ~32KB)")
     ax.set_xlabel("RTOmin (seconds)")
     ax.set_ylabel("Goodput (Mbps)")
+
+    ax.set_xscale('log')
     
     ax.set_ylim(0, 1000)
     ax.set_yticks(range(0, 1001, 100))
-    plt.xticks(rotation=90)
+
+    ax.set_xticks(rto_order)
+    ax.set_xticklabels(x_labels, rotation=90)
     
     ax.grid(True, linestyle=':', color='black', alpha=0.6)
     ax.legend(title="# servers", loc='lower left', frameon=False, labelspacing=0.2)

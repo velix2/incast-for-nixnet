@@ -43,6 +43,7 @@ let
       b.node = "br0";
       netem.rateMbit = 1000;
       netem.limit = bufferSizeKB * 1024 / 1500; # roughly simulates buffer size
+      netem.lossPercent = 0.1; 
     };
   };
 
@@ -81,6 +82,7 @@ let
       b.node = "br0";
       netem.rateMbit = 1000;
       netem.limit = bufferSizeKB * 1024 / 1500; # roughly simulates buffer size
+      netem.lossPercent = 0.1; 
     };
   };
 
