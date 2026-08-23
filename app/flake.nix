@@ -13,20 +13,24 @@
     pkgs = import nixpkgs { 
       inherit system; 
     };
-  in 
-  {
-    packages.${system}.default = pkgs.stdenv.mkDerivation {
-        inherit system;
-        name = "incast";
-        src = ./src;
-        buildInputs = [ pkgs.gcc41 pkgs.gnumake ];
-        buildPhase = "make";
+  in
+  let baseConfig = {
+    inherit system;
+    name = "incast";
+    src = ./src;
+    buildInputs = [ pkgs.gcc41 pkgs.gnumake ];
 
-        installPhase = ''
-          mkdir -p $out/bin
-          cp client/a.out $out/bin/client
-          cp server/a.out $out/bin/server
-          '';
-    };
+    installPhase = ''
+      mkdir -p $out/bin
+      cp client/a.out $out/bin/client
+      cp server/a.out $out/bin/server
+      '';
+  };
+  in
+  {
+    packages.${system} = {
+      default = pkgs.stdenv.mkDerivation (baseConfig // {buildPhase = "make"; });
+      silent = pkgs.stdenv.mkDerivation (baseConfig // {buildPhase = "make silent"; });
+    }; 
   };
 }
