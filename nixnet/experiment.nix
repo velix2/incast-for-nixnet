@@ -93,6 +93,7 @@ in
   arpPrefill = true;
   sysctl = {
       "net.ipv4.tcp_rto_min_us" = rtoMinUs;
+      "net.ipv4.tcp_rmem" = "${toString (8 * 1024)} 87380 ${toString (4 * 1024 * 1024)}"; # Old 2.6.28 kernel parameters - 8KiB, 87380B, 4MiB
   };
   bridges = [ "br0" ];
   nodes = lib.mergeAttrsList (map (node: node.nodes) nodeList);
