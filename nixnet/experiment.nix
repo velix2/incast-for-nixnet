@@ -20,7 +20,7 @@ let
   {
     nodes."server${toString i}" = {
       packages = [ incast ];
-      networking.interfaces.${"eth${toString (i + 1)}"} = { 
+      networking.interfaces.${"eth${toString i}"} = { 
         ipv4.addresses = [
           {
             inherit address;
@@ -38,12 +38,16 @@ let
       };
       workDir = null;
     };
-    veths."eth${toString (i + 1)}" = {
+    veths."eth${toString i}" = {
       a.node = "server${toString i}";
       b.node = "br0";
       netem.rateMbit = 1000;
       netem.limit = bufferSizeKB * 1024 / 1500; # roughly simulates buffer size
-      # netem.lossPercent = 0.1; 
+      ethtool = {
+        tcpSegmentationOffload = false;
+        genericSegmentationOffload = false;
+        genericReceiveOffload = false;
+      };
     };
   };
 
@@ -82,7 +86,11 @@ let
       b.node = "br0";
       netem.rateMbit = 1000;
       netem.limit = bufferSizeKB * 1024 / 1500; # roughly simulates buffer size
-      # netem.lossPercent = 0.1; 
+      ethtool = {
+        tcpSegmentationOffload = false;
+        genericSegmentationOffload = false;
+        genericReceiveOffload = false;
+      };
     };
   };
 
@@ -94,6 +102,8 @@ in
   sysctl = {
       "net.ipv4.tcp_rto_min_us" = rtoMinUs;
       "net.ipv4.tcp_rmem" = "${toString (8 * 1024)} 87380 ${toString (4 * 1024 * 1024)}"; # Old 2.6.28 kernel parameters - 8KiB, 87380B, 4MiB
+      "net.ipv4.tcp_early_retrans" = 0; # disables TCP TLP
+      "net.ipv4.tcp_autocorking" = 0; # disables TCP autocorking
   };
   bridges = [ "br0" ];
   nodes = lib.mergeAttrsList (map (node: node.nodes) nodeList);
