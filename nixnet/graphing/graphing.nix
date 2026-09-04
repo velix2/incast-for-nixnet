@@ -6,7 +6,7 @@
 let mkConfig = blockSizeBytes: n: rtoMinUs: (import ../experiment.nix { inherit pkgs nixnet incast n rtoMinUs blockSizeBytes; lib = pkgs.lib; }) 
   // {workDir = "out-graphs/{run}/${toString n}-servers/rto${toString rtoMinUs}"; };
 mkCommand = blockSizeBytes: n: rto: ''
-  ${nixnet.mkExperiment (mkConfig blockSizeBytes n rto)}/bin/testbed $@
+  ${pkgs.lib.getExe (nixnet.mkExperiment (mkConfig blockSizeBytes n rto))} $@
     grep -h 'Goodput' out-graphs/*/${toString n}-servers/rto${toString rto}/client/stdout.txt | sed 's/^/Server Count = ${toString n}, RTOmin = ${toString rto}: /' >> out-graphs/summary.txt
   '';
 python3 = pkgs.python3.withPackages (ps: with ps; [ matplotlib ]);
