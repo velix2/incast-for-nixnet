@@ -32,7 +32,7 @@ def create_plot(data_file):
             
             ax.plot(server_counts, y_vals, linewidth=2, **style)
 
-    ax.set_title("Num Servers vs Goodput\n(Fixed Block = 1.008MB, buffer = ~32KB)")
+    ax.set_title("Num Servers vs Goodput\n(Fixed Block = ~1MB, buffer = ~32KB)")
     ax.set_xlabel("Number of Servers")
     ax.set_ylabel("Goodput (Mbps)")
     

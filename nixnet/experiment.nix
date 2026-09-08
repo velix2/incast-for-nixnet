@@ -67,7 +67,7 @@ let
         exec =
           let serverNamesFile = pkgs.writeText "server_names.txt" 
           (builtins.concatStringsSep "\n" (map mkAddress (lib.range 1 n)));
-          stripeUnit = blockSizeBytes / n;
+          stripeUnit = (((blockSizeBytes / n) + 500) / 1000) * 1000; # round to nearest 1000
           in
           lib.optionalString measureRtt ''
             ping -c 5 10.0.0.2 | grep "rtt" | tee ./rtt.txt
