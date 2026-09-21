@@ -1,7 +1,7 @@
 {
   inputs = {
     nixpkgs = {
-      url = "github:NixOS/nixpkgs/2989ce0cac7eef85d1a792067b689c1825371126";
+      url = "github:NixOS/nixpkgs/139ff6d52f7f2840ce129124daeb563336ca75ac";
       flake = false;
     };
   };
@@ -18,7 +18,7 @@
     inherit system;
     name = "incast";
     src = ./src;
-    buildInputs = [ pkgs.gcc41 pkgs.gnumake ];
+    buildInputs = [ pkgs.gcc42 pkgs.gnumake ];
 
     installPhase = ''
       mkdir -p $out/bin
