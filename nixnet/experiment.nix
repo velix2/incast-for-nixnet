@@ -11,6 +11,7 @@
   bufferSizeKB ? 32,
 
   measureRtt ? false,
+  writeClientCapture ? false,
 }:
 let 
   mkAddress = i: "10.${toString (i / (254 * 254))}.${toString (i / 254)}.${toString ((lib.mod i 254) + 1)}";
@@ -42,7 +43,7 @@ let
       a.node = "server${toString i}";
       b.node = "br0";
       netem.rateMbit = 1000;
-      netem.limit = bufferSizeKB * 1024 / 1500; # roughly simulates buffer size
+      netem.limit = bufferSizeKB * 1000 / 1066; # roughly simulates buffer size
       ethtool = {
         tcpSegmentationOffload = false;
         genericSegmentationOffload = false;
@@ -54,7 +55,7 @@ let
   clientConfig =
   {
     nodes.client = {
-    packages = [ incast ] ++ lib.optional measureRtt pkgs.iputils;
+    packages = [ incast ] ++ lib.optional measureRtt pkgs.iputils  ++ lib.optional writeClientCapture pkgs.tcpdump;
       networking.interfaces."eth0" = { 
         ipv4.addresses = [
           {
@@ -72,6 +73,15 @@ let
           lib.optionalString measureRtt ''
             ping -c 5 10.0.0.2 | grep "rtt" | tee ./rtt.txt
           '' +
+          lib.optionalString writeClientCapture ''
+            tcpdump -i eth0 -w capture.cap &
+            TD_PID=$!
+            cleanup() {
+              kill $TD_PID
+              wait $TD_PID
+            }
+            trap cleanup EXIT
+          '' +
           ''
             sleep 1
             # client [num of servers] [server names file] [port] [stripe unit] [server request unit] [num blocks]
@@ -85,7 +95,7 @@ let
       a.node = "client";
       b.node = "br0";
       netem.rateMbit = 1000;
-      netem.limit = bufferSizeKB * 1024 / 1500; # roughly simulates buffer size
+      netem.limit = bufferSizeKB * 1000 / 1066; # roughly simulates buffer size
       ethtool = {
         tcpSegmentationOffload = false;
         genericSegmentationOffload = false;
