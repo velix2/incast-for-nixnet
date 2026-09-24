@@ -43,7 +43,7 @@ let
       a.node = "server${toString i}";
       b.node = "br0";
       netem.rateMbit = 1000;
-      netem.limit = bufferSizeKB * 1000 / 1066; # roughly simulates buffer size
+      netem.limit = bufferSizeKB * 1000 / 1500; # roughly simulates buffer size
       ethtool = {
         tcpSegmentationOffload = false;
         genericSegmentationOffload = false;
@@ -95,7 +95,7 @@ let
       a.node = "client";
       b.node = "br0";
       netem.rateMbit = 1000;
-      netem.limit = bufferSizeKB * 1000 / 1066; # roughly simulates buffer size
+      netem.limit = bufferSizeKB * 1000 / 1500; # roughly simulates buffer size
       ethtool = {
         tcpSegmentationOffload = false;
         genericSegmentationOffload = false;
