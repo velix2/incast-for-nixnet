@@ -14,6 +14,8 @@
   writeClientCapture ? false,
 }:
 let 
+  mtu = 1500;
+
   mkAddress = i: "10.${toString (i / (254 * 254))}.${toString (i / 254)}.${toString ((lib.mod i 254) + 1)}";
 
   mkServer = i:
@@ -43,7 +45,7 @@ let
       a.node = "server${toString i}";
       b.node = "br0";
       netem.rateMbit = 1000;
-      netem.limit = bufferSizeKB * 1000 / 1500; # roughly simulates buffer size
+      netem.limit = bufferSizeKB * 1000 / mtu; # roughly simulates buffer size
       ethtool = {
         tcpSegmentationOffload = false;
         genericSegmentationOffload = false;
@@ -95,7 +97,7 @@ let
       a.node = "client";
       b.node = "br0";
       netem.rateMbit = 1000;
-      netem.limit = bufferSizeKB * 1000 / 1500; # roughly simulates buffer size
+      netem.limit = bufferSizeKB * 1000 / mtu; # roughly simulates buffer size
       ethtool = {
         tcpSegmentationOffload = false;
         genericSegmentationOffload = false;
@@ -107,9 +109,9 @@ let
 nodeList = [ clientConfig ] ++ map mkServer (lib.range 1 n);
 in
 {
+  inherit mtu;
   arp = true;
   arpPrefill = true;
-  mtu = 1500;
   sysctl = {
       "net.ipv4.tcp_rto_min_us" = rtoMinUs;
       "net.ipv4.tcp_rmem" = "${toString (8 * 1024)} 87380 ${toString (4 * 1024 * 1024)}"; # Old 2.6.28 kernel parameters - 8KiB, 87380B, 4MiB
