@@ -1,81 +1,95 @@
 {
   pkgs,
   lib,
-  nixnet,
   incast,
-  
   n ? 16,
   blocks ? 200,
-  blockSizeBytes ? 1000000, # divided by n, it must be multiple of 1000  
+  blockSizeBytes ? 1000000,
   rtoMinUs ? 200000,
   bufferSizeKB ? 32,
+
+  quickack ? true,
 
   measureRtt ? false,
   writeClientCapture ? false,
 }:
-let 
+let
   mtu = 1500;
 
-  mkAddress = i: "10.${toString (i / (254 * 254))}.${toString (i / 254)}.${toString ((lib.mod i 254) + 1)}";
+  mkAddress =
+    i: "10.${toString (i / (254 * 254))}.${toString (i / 254)}.${toString ((lib.mod i 254) + 1)}";
 
-  mkServer = i:
-  let address = mkAddress i; in
-  {
-    nodes."server${toString i}" = {
-      packages = [ incast ];
-      networking.interfaces.${"eth${toString i}"} = { 
-        ipv4.addresses = [
-          {
-            inherit address;
-            prefixLength = 8;
-          }
-        ];
-      };
-      scripts.main = {
-        exec =
-          ''
+  mkServer =
+    i:
+    let
+      address = mkAddress i;
+    in
+    {
+      nodes."server${toString i}" = {
+        packages = [ incast ];
+        networking.interfaces.${"eth${toString i}"} = {
+          ipv4 = {
+            addresses = [
+              {
+                inherit address;
+                prefixLength = 8;
+              }
+            ];
+          };
+        };
+        scripts.main = {
+          exec = ''
             echo "Starting server on address ${address}"
             server > /dev/null
           '';
-        await = false;
+          await = false;
+        };
+        workDir = null;
+      } // lib.optionalAttrs quickack {
+        postSetup = "ip route replace 10.0.0.0/8 dev eth${toString i} quickack 1 scope link";
       };
-      workDir = null;
-    };
-    veths."eth${toString i}" = {
-      a.node = "server${toString i}";
-      b.node = "br0";
-      netem.rateMbit = 1000;
-      netem.limit = bufferSizeKB * 1000 / mtu; # roughly simulates buffer size
-      ethtool = {
-        tcpSegmentationOffload = false;
-        genericSegmentationOffload = false;
-        genericReceiveOffload = false;
+      veths."eth${toString i}" = {
+        a.node = "server${toString i}";
+        b.node = "br0";
+        netem.rateMbit = 1000;
+        netem.limit = bufferSizeKB * 1000 / mtu; # roughly simulates buffer size
+        ethtool = {
+          tcpSegmentationOffload = false;
+          genericSegmentationOffload = false;
+          genericReceiveOffload = false;
+        };
       };
     };
-  };
 
-  clientConfig =
-  {
+  clientConfig = {
     nodes.client = {
-    packages = [ incast ] ++ lib.optional measureRtt pkgs.iputils  ++ lib.optional writeClientCapture pkgs.tcpdump;
-      networking.interfaces."eth0" = { 
-        ipv4.addresses = [
-          {
-            address = "10.0.0.1";
-            prefixLength = 8;
-          }
-        ];
+      packages = [
+        incast
+      ]
+      ++ lib.optional measureRtt pkgs.iputils
+      ++ lib.optional writeClientCapture pkgs.tcpdump;
+      networking.interfaces."eth0" = {
+        ipv4 = {
+          addresses = [
+            {
+              address = "10.0.0.1";
+              prefixLength = 8;
+            }
+          ];
+        };
       };
       scripts.main = {
         exec =
-          let serverNamesFile = pkgs.writeText "server_names.txt" 
-          (builtins.concatStringsSep "\n" (map mkAddress (lib.range 1 n)));
-          stripeUnit = (((blockSizeBytes / n) + 500) / 1000) * 1000; # round to nearest 1000
+          let
+            serverNamesFile = pkgs.writeText "server_names.txt" (
+              builtins.concatStringsSep "\n" (map mkAddress (lib.range 1 n))
+            );
+            stripeUnit = (((blockSizeBytes / n) + 500) / 1000) * 1000; # round to nearest 1000
           in
           lib.optionalString measureRtt ''
             ping -c 5 10.0.0.2 | grep "rtt" | tee ./rtt.txt
-          '' +
-          lib.optionalString writeClientCapture ''
+          ''
+          + lib.optionalString writeClientCapture ''
             tcpdump -i eth0 -w capture.cap &
             TD_PID=$!
             cleanup() {
@@ -83,8 +97,8 @@ let
               wait $TD_PID
             }
             trap cleanup EXIT
-          '' +
           ''
+          + ''
             sleep 1
             # client [num of servers] [server names file] [port] [stripe unit] [server request unit] [num blocks]
             client ${toString n} ${serverNamesFile} 65125 ${toString stripeUnit} 1 ${toString blocks} | tee ./stdout.txt   
@@ -92,7 +106,9 @@ let
         foreground = true;
         await = true;
       };
-    };
+    } // lib.optionalAttrs quickack {
+        postSetup = "ip route replace 10.0.0.0/8 dev eth0 quickack 1 scope link";
+      };
     veths."eth0" = {
       a.node = "client";
       b.node = "br0";
@@ -106,20 +122,20 @@ let
     };
   };
 
-nodeList = [ clientConfig ] ++ map mkServer (lib.range 1 n);
+  nodeList = [ clientConfig ] ++ map mkServer (lib.range 1 n);
 in
 {
   inherit mtu;
   arp = true;
   arpPrefill = true;
   sysctl = {
-      "net.ipv4.tcp_rto_min_us" = rtoMinUs;
-      "net.ipv4.tcp_rmem" = "${toString (8 * 1024)} 87380 ${toString (4 * 1024 * 1024)}"; # Old 2.6.28 kernel parameters - 8KiB, 87380B, 4MiB
-      "net.ipv4.tcp_ecn" = 0;
-      "net.ipv4.tcp_orphan_retries" = 7;
-      "net.ipv4.tcp_syn_retries" = 5;
-      "net.ipv4.tcp_early_retrans" = 0; # disables TCP TLP
-      "net.ipv4.tcp_autocorking" = 0; # disables TCP autocorking
+    "net.ipv4.tcp_rto_min_us" = rtoMinUs;
+    "net.ipv4.tcp_rmem" = "${toString (8 * 1024)} 87380 ${toString (4 * 1024 * 1024)}"; # Old 2.6.28 kernel parameters - 8KiB, 87380B, 4MiB
+    "net.ipv4.tcp_ecn" = 0;
+    "net.ipv4.tcp_orphan_retries" = 7;
+    "net.ipv4.tcp_syn_retries" = 5;
+    "net.ipv4.tcp_early_retrans" = 0; # disables TCP TLP
+    "net.ipv4.tcp_autocorking" = 0; # disables TCP autocorking
   };
   bridges = [ "br0" ];
   nodes = lib.mergeAttrsList (map (node: node.nodes) nodeList);

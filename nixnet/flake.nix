@@ -14,7 +14,7 @@
         incast = inputs.incast.packages.${system}.default;
         
         defaultConfig = import ./experiment.nix { 
-          inherit pkgs nixnet incast;
+          inherit pkgs incast;
           lib = pkgs.lib;
         };
       in
