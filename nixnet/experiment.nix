@@ -115,6 +115,9 @@ in
   sysctl = {
       "net.ipv4.tcp_rto_min_us" = rtoMinUs;
       "net.ipv4.tcp_rmem" = "${toString (8 * 1024)} 87380 ${toString (4 * 1024 * 1024)}"; # Old 2.6.28 kernel parameters - 8KiB, 87380B, 4MiB
+      "net.ipv4.tcp_ecn" = 0;
+      "net.ipv4.tcp_orphan_retries" = 7;
+      "net.ipv4.tcp_syn_retries" = 5;
       "net.ipv4.tcp_early_retrans" = 0; # disables TCP TLP
       "net.ipv4.tcp_autocorking" = 0; # disables TCP autocorking
   };
