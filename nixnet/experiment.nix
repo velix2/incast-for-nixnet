@@ -8,7 +8,7 @@
   rtoMinUs ? 200000,
   bufferSizeKB ? 32,
 
-  quickack ? true,
+  quickack ? false,
 
   measureRtt ? false,
   writeClientCapture ? false,

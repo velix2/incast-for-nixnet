@@ -9,6 +9,7 @@ let
       blockSizeBytes,
       n,
       rto,
+      quickack,
     }:
     (import ../experiment.nix {
       inherit
@@ -16,6 +17,7 @@ let
         incast
         n
         blockSizeBytes
+        quickack
         ;
       rtoMinUs = rto;
       lib = pkgs.lib;
@@ -28,6 +30,7 @@ let
       blockSizeBytes,
       n,
       rto,
+      quickack,
     }@params:
     ''
       ${pkgs.lib.getExe (nixnet.mkExperiment (mkConfig params))} $@
@@ -77,6 +80,7 @@ in
             blockSizeBytes = 1000000;
             n = n;
             rto = rto;
+            quickack = false;
           }
         ) rtoStepsFig23
       ) serverCountsFig2
@@ -101,6 +105,7 @@ in
             blockSizeBytes = 1000000;
             n = n;
             rto = rto;
+            quickack = false;
           }
         ) rtoStepsFig23
       ) serverCountsFig3
@@ -124,6 +129,7 @@ in
           mkCommand {
             blockSizeBytes = 1000000;
             n = n;
+            quickack = true;
             rto = rto;
           }
         ) rtoStepsFig9
