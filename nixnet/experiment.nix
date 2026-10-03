@@ -7,6 +7,7 @@
   blockSizeBytes ? 1000000,
   rtoMinUs ? 200000,
   bufferSizeKB ? 32,
+  linkspeed ? 1000,
 
   quickack ? false,
 
@@ -45,13 +46,11 @@ let
           await = false;
         };
         workDir = null;
-      } // lib.optionalAttrs quickack {
-        postSetup = "ip route replace 10.0.0.0/8 dev eth${toString i} quickack 1 scope link";
       };
       veths."eth${toString i}" = {
         a.node = "server${toString i}";
         b.node = "br0";
-        netem.rateMbit = 1000;
+        netem.rateMbit = linkspeed;
         netem.limit = bufferSizeKB * 1000 / mtu; # roughly simulates buffer size
         ethtool = {
           tcpSegmentationOffload = false;
@@ -112,7 +111,7 @@ let
     veths."eth0" = {
       a.node = "client";
       b.node = "br0";
-      netem.rateMbit = 1000;
+      netem.rateMbit = linkspeed;
       netem.limit = bufferSizeKB * 1000 / mtu; # roughly simulates buffer size
       ethtool = {
         tcpSegmentationOffload = false;
