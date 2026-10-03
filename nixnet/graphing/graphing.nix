@@ -33,6 +33,7 @@ let
       n,
       rto,
       quickack,
+      linkspeed ? 1000,
     }@params:
     ''
       ${pkgs.lib.getExe (nixnet.mkExperiment (mkConfig params))} $@
@@ -165,7 +166,7 @@ in
   );
 
   plot-figure-9 = pkgs.writeShellScriptBin "plot-figure-9" (
-    "${python3}/bin/python3 ${./recreate-figure-9.py}"
+    "${python3}/bin/python3 ${./recreate-figure-9-low-bandwidth.py}"
   );
 
   plot-figure-9-low-bandwidth = pkgs.writeShellScriptBin "plot-figure-9-low-bandwidth" (
@@ -220,5 +221,46 @@ in
 
   plot-figure-14-relative = pkgs.writeShellScriptBin "plot-figure-14-relative" (
     "${python3}/bin/python3 ${./recreate-figure-14-relative.py}"
+  );
+
+  incast-figure-14-low-bandwidth = pkgs.writeShellScriptBin "incast-figure-14-low-bandwidth" (
+    "rm -rf out-graphs && mkdir -p out-graphs"
+    + "\n"
+    + (builtins.concatStringsSep "\n" (
+      builtins.concatMap (
+        n:
+        map
+          (quickack: ''
+            ${
+              pkgs.lib.getExe (
+                nixnet.mkExperiment (
+                  (import ../experiment.nix {
+                    inherit
+                      pkgs
+                      incast
+                      n
+                      quickack
+                      ;
+                    rtoMinUs = 1;
+                    blockSizeBytes = 1000000;
+                    lib = pkgs.lib;
+                    linkspeed = 250;
+                  })
+                  // {
+                    workDir = "out-graphs/{run}/${toString n}-servers/quickack-${toString quickack}";
+                  }
+                )
+              )
+            } $@
+              grep -h 'Goodput' out-graphs/*/${toString n}-servers/quickack-${toString quickack}/client/stdout.txt | sed 's/^/Server Count = ${toString n}, Quickack = ${if quickack then "1" else "0"}: /' >> out-graphs/summary.txt
+          '')
+          [
+            false
+            true
+          ]
+      ) serverCountsFig9_14
+    ))
+    + "\n"
+    + "${python3}/bin/python3 ${./recreate-figure-14-low-bandwidth.py} \n"
   );
 }
