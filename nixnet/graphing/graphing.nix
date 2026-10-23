@@ -11,6 +11,9 @@ let
       rto,
       quickack,
       linkspeed ? 1000,
+      useSysctl ? true,
+      disableOffloading ? true,
+      mtu ? 1500
     }:
     (import ../experiment.nix {
       inherit
@@ -20,6 +23,9 @@ let
         blockSizeBytes
         quickack
         linkspeed
+        useSysctl
+        disableOffloading
+        mtu
         ;
       rtoMinUs = rto;
       lib = pkgs.lib;
@@ -34,6 +40,9 @@ let
       rto,
       quickack,
       linkspeed ? 1000,
+      useSysctl ? true,
+      disableOffloading ? true,
+      mtu ? 1500
     }@params:
     ''
       ${pkgs.lib.getExe (nixnet.mkExperiment (mkConfig params))} $@
@@ -96,7 +105,7 @@ in
     "${python3}/bin/python3 ${./recreate-figure-2.py}"
   );
 
-  incast-figure-3 = pkgs.writeShellScriptBin "incast-figure-3" (
+  incast-figure-3-base = pkgs.writeShellScriptBin "incast-figure-3-base" (
     "rm -rf out-graphs && mkdir -p out-graphs"
     + "\n"
     + (builtins.concatStringsSep "\n" (
@@ -109,16 +118,100 @@ in
             n = n;
             rto = rto;
             quickack = false;
+            useSysctl = false;
+            disableOffloading = false;
           }
         ) rtoStepsFig23
       ) serverCountsFig3
     ))
     + "\n"
-    + "${python3}/bin/python3 ${./recreate-figure-3.py}"
+    +  "${python3}/bin/python3 ${./recreate-figure-3.py} base-figure-3-output_servers_rto_vs_goodput.png"
   );
 
-  plot-figure-3 = pkgs.writeShellScriptBin "plot-figure-3" (
-    "${python3}/bin/python3 ${./recreate-figure-3.py}"
+  plot-figure-3-base = pkgs.writeShellScriptBin "plot-figure-3-base" (
+    "${python3}/bin/python3 ${./recreate-figure-3.py} base-figure-3-output_servers_rto_vs_goodput.png"
+  );
+
+  incast-figure-3-no-offloading = pkgs.writeShellScriptBin "incast-figure-3-no-offloading" (
+    "rm -rf out-graphs && mkdir -p out-graphs"
+    + "\n"
+    + (builtins.concatStringsSep "\n" (
+      builtins.concatMap (
+        n:
+        map (
+          rto:
+          mkCommand {
+            blockSizeBytes = 1000000;
+            n = n;
+            rto = rto;
+            quickack = false;
+            useSysctl = false;
+            disableOffloading = true;
+          }
+        ) rtoStepsFig23
+      ) serverCountsFig3
+    ))
+    + "\n"
+    +  "${python3}/bin/python3 ${./recreate-figure-3.py} no-offloading-figure-3-output_servers_rto_vs_goodput.png"
+  );
+
+  plot-figure-3-no-offloading = pkgs.writeShellScriptBin "plot-figure-3-no-offloading-with-sysctl" (
+    "${python3}/bin/python3 ${./recreate-figure-3.py} no-offloading-figure-3-output_servers_rto_vs_goodput.png"
+  );
+
+  incast-figure-3-no-offloading-with-sysctl = pkgs.writeShellScriptBin "incast-figure-3-no-offloading-with-sysctl" (
+    "rm -rf out-graphs && mkdir -p out-graphs"
+    + "\n"
+    + (builtins.concatStringsSep "\n" (
+      builtins.concatMap (
+        n:
+        map (
+          rto:
+          mkCommand {
+            blockSizeBytes = 1000000;
+            n = n;
+            rto = rto;
+            quickack = false;
+            useSysctl = true;
+            disableOffloading = true;
+          }
+        ) rtoStepsFig23
+      ) serverCountsFig3
+    ))
+    + "\n"
+    +  "${python3}/bin/python3 ${./recreate-figure-3.py} no-offloading-with-sysctl-figure-3-output_servers_rto_vs_goodput.png"
+  );
+
+  plot-figure-3-no-offloading-with-sysctl = pkgs.writeShellScriptBin "plot-figure-3-jumbo-frames" (
+    "${python3}/bin/python3 ${./recreate-figure-3.py} no-offloading-with-sysctl-figure-3-output_servers_rto_vs_goodput.png"
+  );
+
+    incast-figure-3-jumbo-frames = pkgs.writeShellScriptBin "incast-figure-3-jumbo-frames" (
+    "rm -rf out-graphs && mkdir -p out-graphs"
+    + "\n"
+    + (builtins.concatStringsSep "\n" (
+      builtins.concatMap (
+        n:
+        map (
+          rto:
+          mkCommand {
+            blockSizeBytes = 1000000;
+            n = n;
+            rto = rto;
+            quickack = false;
+            useSysctl = true;
+            disableOffloading = true;
+            mtu = 9000;
+          }
+        ) rtoStepsFig23
+      ) serverCountsFig3
+    ))
+    + "\n"
+    +  "${python3}/bin/python3 ${./recreate-figure-3.py} jumbo-frames-figure-3-output_servers_rto_vs_goodput.png"
+  );
+
+  plot-figure-3-jumbo-frames = pkgs.writeShellScriptBin "plot-figure-3-no-offloading" (
+    "${python3}/bin/python3 ${./recreate-figure-3.py} jumbo-frames-figure-3-output_servers_rto_vs_goodput.png"
   );
 
   incast-figure-9 = pkgs.writeShellScriptBin "incast-figure-9" (
@@ -143,7 +236,7 @@ in
     + "${python3}/bin/python3 ${./recreate-figure-9.py}"
   );
 
-  incast-figure-9-low-bandwidth = pkgs.writeShellScriptBin "incast-figure-9" (
+  incast-figure-9-low-bandwidth = pkgs.writeShellScriptBin "incast-figure-9-low-bandwidth" (
     "rm -rf out-graphs && mkdir -p out-graphs"
     + "\n"
     + (builtins.concatStringsSep "\n" (
@@ -162,11 +255,11 @@ in
       ) serverCountsFig9_14
     ))
     + "\n"
-    + "${python3}/bin/python3 ${./recreate-figure-9.py}"
+    + "${python3}/bin/python3 ${./recreate-figure-9-low-bandwidth.py}"
   );
 
   plot-figure-9 = pkgs.writeShellScriptBin "plot-figure-9" (
-    "${python3}/bin/python3 ${./recreate-figure-9-low-bandwidth.py}"
+    "${python3}/bin/python3 ${./recreate-figure-9.py}"
   );
 
   plot-figure-9-low-bandwidth = pkgs.writeShellScriptBin "plot-figure-9-low-bandwidth" (

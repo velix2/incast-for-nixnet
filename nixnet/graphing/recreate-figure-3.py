@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import re
+import sys
 from collections import defaultdict
 
 def create_plot(data_file):
@@ -56,6 +57,6 @@ def create_plot(data_file):
     ax.legend(title="# servers", loc='lower left', frameon=False, labelspacing=0.2)
     
     plt.tight_layout()
-    plt.savefig('figure-3-output_servers_rto_vs_goodput.png', dpi=300)
+    plt.savefig(str(sys.argv[1]) if sys.argv[1] else 'figure-3-output_servers_rto_vs_goodput.png', dpi=300)
 
 create_plot('out-graphs/summary.txt')

@@ -9,14 +9,16 @@
   bufferSizeKB ? 32,
   linkspeed ? 1000,
 
+  mtu ? 1500,
+
   quickack ? false,
+  useSysctl ? true,
+  disableOffloading ? true,
 
   measureRtt ? false,
   writeClientCapture ? false,
 }:
 let
-  mtu = 1500;
-
   mkAddress =
     i: "10.${toString (i / (254 * 254))}.${toString (i / 254)}.${toString ((lib.mod i 254) + 1)}";
 
@@ -105,14 +107,17 @@ let
         foreground = true;
         await = true;
       };
-    } // lib.optionalAttrs quickack {
-        postSetup = "ip route replace 10.0.0.0/8 dev eth0 quickack 1 scope link";
-      };
+    }
+    // lib.optionalAttrs quickack {
+      postSetup = "ip route replace 10.0.0.0/8 dev eth0 quickack 1 scope link";
+    };
     veths."eth0" = {
       a.node = "client";
       b.node = "br0";
       netem.rateMbit = linkspeed;
       netem.limit = bufferSizeKB * 1000 / mtu; # roughly simulates buffer size
+    }
+    // lib.optionalAttrs disableOffloading {
       ethtool = {
         tcpSegmentationOffload = false;
         genericSegmentationOffload = false;
@@ -129,6 +134,8 @@ in
   arpPrefill = true;
   sysctl = {
     "net.ipv4.tcp_rto_min_us" = rtoMinUs;
+  }
+  // lib.optionalAttrs useSysctl {
     "net.ipv4.tcp_rmem" = "${toString (8 * 1024)} 87380 ${toString (4 * 1024 * 1024)}"; # Old 2.6.28 kernel parameters - 8KiB, 87380B, 4MiB
     "net.ipv4.tcp_ecn" = 0;
     "net.ipv4.tcp_orphan_retries" = 7;
