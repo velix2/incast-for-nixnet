@@ -356,4 +356,8 @@ in
     + "\n"
     + "${python3}/bin/python3 ${./recreate-figure-14-low-bandwidth.py} \n"
   );
+
+  plot-figure-14-low-bandwidth = pkgs.writeShellScriptBin "plot-figure-14-low-bandwidth" (
+    "${python3}/bin/python3 ${./recreate-figure-14-low-bandwidth.py}"
+  );
 }

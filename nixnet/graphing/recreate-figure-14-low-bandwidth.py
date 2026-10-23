@@ -39,8 +39,8 @@ def create_plot(data_file):
     ax.set_xlim(0, 16)
     ax.set_xticks(range(0, 17, 2))
     
-    ax.set_ylim(0, 1000)
-    ax.set_yticks(range(0, 1001, 100))
+    ax.set_ylim(0, 250)
+    ax.set_yticks(range(0, 251, 50))
     
     ax.grid(True, linestyle=':', color='black', alpha=0.6)
     
